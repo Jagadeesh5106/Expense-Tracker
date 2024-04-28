@@ -37,6 +37,8 @@
             <button type="submit" class="bg-primary text-white" onclick="addExpenseHandler(event)">
                 Add Expense
             </button>
+            <input type="hidden" name="expenseId" id="expenseId" type="number">
+            <button class="bg-primary text-white" onclick="editExpenseHandler(event)">Update Expense</button>
         </form>
         <!-- <ul id="expenses" class="list-group"></ul> -->
         <table id="expenses">
@@ -58,19 +60,19 @@
                 row.innerHTML = `<td>${expense.description}</td>
                                  <td>${expense.type}</td> 
                                  <td>${expense.amount}</td>
-                                 <td><button>Edit</button></td>
+                                 <td><button onclick="populateExpenseIntoForm(${expense.id})">Edit</button></td>
                                  <td><button onclick="DeleteExpenseHandler(${expense.id})">Delete</button</td>`;
-                
+
                 tableBody.appendChild(row);
             });
         }
-        function DeleteExpenseHandler(expenseId){
-            fetch('http://localhost:3000/expense/'+expenseId,{
-                method:'DELETE'
-            }).then(result=>{
+        function DeleteExpenseHandler(expenseId) {
+            fetch('http://localhost:3000/expense/' + expenseId, {
+                method: 'DELETE'
+            }).then(result => {
                 console.log(result);
                 fetchExpenses();
-            }).catch(err=>{
+            }).catch(err => {
                 console.log(err);
             })
         }
@@ -132,7 +134,49 @@
                     // Handle errors here
                 });
         }
-
+        function populateExpenseIntoForm(expenseId) {
+            fetch('http://localhost:3000/expense/' + expenseId, { method: 'GET' }).then(response => {
+                if (response) {
+                    return response.json()
+                }
+            }).then(expense => {
+                var amount = document.querySelector("#amount");
+                var description = document.querySelector("#description");
+                var type = document.querySelector("#type");
+                var expenseId = document.querySelector("#expenseId");
+                amount.value = expense.amount;
+                description.value = expense.description;
+                type.value = expense.type;
+                expenseId.value = expense.id;
+            })
+        }
+        function editExpenseHandler(event) {
+            event.preventDefault();
+            const amount = document.querySelector("#amount");
+            const description = document.querySelector("#description");
+            const type = document.querySelector("#type");
+            const expenseId = document.querySelector("#expenseId").value;
+            const expenseDetailsObj = {
+                description : description.value,
+                amount: amount.value,
+                type: type.value
+            }
+                fetch('http://localhost:3000/expense/' + expenseId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(expenseDetailsObj)
+                }).then(response=>{
+                    return response.json();
+                }).then(data=>{
+                    console.log(data);
+                    amount.value=""
+                    description.value=""
+                    type.value=""
+                    fetchExpenses()
+                })
+        }
         // Fetch expenses when the webpage loads
         window.onload = fetchExpenses;
     </script>
