@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Expense Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-primary">
+        <div class="container">
+            <div class="row justify-content-center text-center">
+                <h1 class="text-white">Track your Expenses</h1>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <form id="expenseForm" class="form-inline " onsubmit="addExpenseHandler(event)" method="POST">
+            <label for="amount">Choose Expense Amount</label>
+            <input type="number" name="amount" id="amount" class="form-control mr-sm-2" />
+            <br />
+            <label for="description">Choose Description</label>
+            <input type="text" name="description" id="description" class="form-control mr-sm-2" />
+            <br />
+            <label for="type">Choose Type</label>
+            <select name="type" id="type" class="form-control mr-sm-2">
+                <option value="Fuel">Fuel</option>
+                <option value="Movie">Movie</option>
+                <option value="Grocery">Grocery</option>
+                <option value="Bill">Bill</option>
+            </select>
+            <br />
+            <button type="submit" class="bg-primary text-white" onclick="addExpenseHandler(event)">
+                Add Expense
+            </button>
+        </form>
+        <!-- <ul id="expenses" class="list-group"></ul> -->
+        <table id="expenses">
+            <tr>
+                <th>Description</th>
+                <th>Type of Expense</th>
+                <th>Amount</th>
+            </tr>
+        </table>
+    </div>
+    <script>
+        function createExpenseRows(expenses) {
+            const tableBody = document.querySelector('#expenses');
+            // Clear existing rows
+            tableBody.innerHTML = '<tr><th>Description</th><th>Type</th><th>Amount</th></tr>';
+
+            expenses.forEach(expense => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${expense.description}</td>
+                                 <td>${expense.type}</td> 
+                                 <td>${expense.amount}</td>
+                                 <td><button>Edit</button></td>
+                                 <td><button onclick="DeleteExpenseHandler(${expense.id})">Delete</button</td>`;
+                
+                tableBody.appendChild(row);
+            });
+        }
+        function DeleteExpenseHandler(expenseId){
+            fetch('http://localhost:3000/expense/'+expenseId,{
+                method:'DELETE'
+            }).then(result=>{
+                console.log(result);
+                fetchExpenses();
+            }).catch(err=>{
+                console.log(err);
+            })
+        }
+        function fetchExpenses() {
+            fetch('http://localhost:3000/expense')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Expenses:', data);
+                    createExpenseRows(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching expenses:', error);
+                    // Handle errors here
+                });
+        }
+
+        function addExpenseHandler(e) {
+            e.preventDefault();
+
+            var amount = document.querySelector("#amount");
+            var description = document.querySelector("#description");
+            var type = document.querySelector("#type");
+
+            var expenseDetailsObj = {
+                amount: amount.value,
+                description: description.value,
+                type: type.value
+            };
+
+            fetch('http://localhost:3000/expense', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(expenseDetailsObj)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Expense added:', data);
+                    // Optionally, you can update the UI here to reflect the added expense
+                    // After adding the expense, fetch the updated list of expenses
+                    fetchExpenses();
+                    amount.value = "";
+                    description.value = ""
+                    type.value = ""
+                })
+                .catch(error => {
+                    console.error('Error adding expense:', error);
+                    // Handle errors here
+                });
+        }
+
+        // Fetch expenses when the webpage loads
+        window.onload = fetchExpenses;
+    </script>
+</body>
+
+</html>
